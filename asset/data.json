@@ -1,0 +1,39 @@
+{
+  "app_info": {
+    "name": "GendALF",
+    "full_name": "GendALF",
+    "version": "1.0.0",
+    "build": "20250710",
+    "release_date": "2025-07-10",
+    "description": "Visualiseur et analyseur d'images pour circuits électroniques",
+    "website": "https://github.com/votre-repo/GendALF",
+    "documentation": "https://github.com/votre-repo/GendALF/wiki"
+  },
+  "developer": {
+    "name": "Guionnet Axel - Poirel Romain - Gaucher Tylan ",
+    "email": "aguionnet@gaming.tech",
+    "github": "https://github.com/votre-username"
+  },
+  "technical": {
+    "python_version": "3.10+",
+    "platform": "Windows",
+    "architecture": "x64",
+    "dependencies": ["opencv-python", "pillow", "tkinter", "pathlib", "numpy"]
+  },
+  "update_info": {
+    "update_server": "https://api.github.com/repos/votre-repo/GendALF",
+    "current_version": "2.0.0",
+    "last_check": null,
+    "auto_check": true
+  },
+  "features": [
+    "Visualisation d'images multi-couches",
+    "Système de pathtracking avancé",
+    "Calibrage automatique des vias",
+    "Outils de dessin et annotation",
+    "Fusion de projets",
+    "Support multi-langues",
+    "Interface utilisateur moderne"
+  ]
+  
+}
