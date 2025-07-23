@@ -80,8 +80,14 @@ class RXviewer:
     def __init__(self) -> None:
         self.app = tk.Tk()
 
-        # Créer le dossier de logs au premier lancement si besoin
-        logs_dir = Path(__file__).resolve().parent / "logs"
+
+        # Créer le dossier de logs au premier lancement si besoin (compatible PyInstaller)
+        import sys
+        if hasattr(sys, '_MEIPASS'):
+            base_dir = Path(sys._MEIPASS)
+        else:
+            base_dir = Path(__file__).resolve().parent
+        logs_dir = base_dir / "logs"
         try:
             logs_dir.mkdir(parents=True, exist_ok=True)
         except Exception:
