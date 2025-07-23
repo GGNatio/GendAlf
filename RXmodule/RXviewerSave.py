@@ -72,12 +72,15 @@ class RXviewerAutoUpdater:
             show_dialog()
 
     def _run_updater(self):
-        app_root = Path(__file__).parent.parent.parent
-        updater_path = app_root / "update.exe"
+        import sys
+        import os
+        from pathlib import Path
+        exe_dir = Path(os.path.dirname(os.path.abspath(sys.argv[0])))
+        updater_path = exe_dir / "update.exe"
         if updater_path.exists():
-            subprocess.Popen([str(updater_path), str(app_root)])
+            subprocess.Popen([str(updater_path)])
         else:
-            messagebox.showerror("Erreur", "update.exe est introuvable dans le dossier d'installation.")
+            messagebox.showerror("Erreur", f"update.exe est introuvable dans le dossier : {exe_dir}")
         if hasattr(self.app, 'app'):
             self.app.app.quit()
 

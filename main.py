@@ -483,6 +483,8 @@ class RXviewer:
         
         about_menu = tk.Menu(menu_bar, tearoff=0)
         about_menu.add_command(label=self.lang.get('check_updates', 'Rechercher les mises à jour'), command=self.checkForUpdates)
+        about_menu.add_command(label="Mise à jour automatique", command=self.run_update_online)
+        about_menu.add_command(label="Mise à jour locale (ZIP)", command=self.run_update_local)
         about_menu.add_separator()
         about_menu.add_command(label=self.lang.get('about_info', 'Informations'), command=self.showAboutInfo)
         menu_bar.add_cascade(label=self.lang.get("about_menu", "À propos"), menu=about_menu)
@@ -511,6 +513,42 @@ class RXviewer:
         
 
         self.app.config(menu=menu_bar)
+    def run_update_online(self):
+        """Lance update.exe en mode online (forcé)"""
+        import subprocess
+        import sys
+        import os
+        from pathlib import Path
+        exe_dir = Path(os.path.dirname(os.path.abspath(sys.argv[0])))
+        exe_path = exe_dir / "update.exe"
+        if not exe_path.exists():
+            from tkinter import messagebox
+            messagebox.showerror("Erreur", f"update.exe introuvable dans le dossier : {exe_dir}")
+            return
+        try:
+            subprocess.Popen([str(exe_path), "--online"])
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Erreur", f"Impossible de lancer la mise à jour automatique : {e}")
+
+    def run_update_local(self):
+        """Lance update.exe en mode local (forcé)"""
+        import subprocess
+        import sys
+        import os
+        from pathlib import Path
+        exe_dir = Path(os.path.dirname(os.path.abspath(sys.argv[0])))
+        exe_path = exe_dir / "update.exe"
+        if not exe_path.exists():
+            from tkinter import messagebox
+            messagebox.showerror("Erreur", f"update.exe introuvable dans le dossier : {exe_dir}")
+            return
+        try:
+            subprocess.Popen([str(exe_path), "--local"])
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Erreur", f"Impossible de lancer la mise à jour locale : {e}")
+        
         
         # Initialiser l'état des menus
         self.updateMenuStates()
