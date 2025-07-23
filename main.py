@@ -18,7 +18,7 @@ from RXmodule.RXviewerSync import RXviewerSync
 from RXmodule.RXviewerVia import RXviewerVia
 from RXmodule.RXviewerPathTracking import RXviewerPathTracking
 from RXmodule.RXviewerSave import RXviewerSaveManager  
-
+from RXmodule.RXviewerReport import RXviewerReport
 class ProjectView:
     def __init__(self, parent: tk.Frame, bgColor: str):
         self.container = tk.Frame(parent)
@@ -79,11 +79,18 @@ class ProjectView:
 class RXviewer:
     def __init__(self) -> None:
         self.app = tk.Tk()
-        
+
+        # Créer le dossier de logs au premier lancement si besoin
+        logs_dir = Path(__file__).resolve().parent / "logs"
+        try:
+            logs_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            # Fallback dans le dossier courant si besoin
+            logs_dir = Path.cwd() / "logs"
+            logs_dir.mkdir(parents=True, exist_ok=True)
+
         self.app.state("zoomed")
-        
         self.app.title('GendALF')
-        
         self.app.geometry('1200x800')
         (Path.home() / "Documents/RXViwer/project").mkdir(parents=True, exist_ok=True)
         self.option = self.openPreference()
@@ -486,7 +493,12 @@ class RXviewer:
         about_menu.add_command(label="Mise à jour automatique", command=self.run_update_online)
         about_menu.add_command(label="Mise à jour locale (ZIP)", command=self.run_update_local)
         about_menu.add_separator()
+        
+        about_menu.add_command(label="Signaler un bug", command=lambda: RXviewerReport(self.app))
+        about_menu.add_separator()
         about_menu.add_command(label=self.lang.get('about_info', 'Informations'), command=self.showAboutInfo)
+        
+
         menu_bar.add_cascade(label=self.lang.get("about_menu", "À propos"), menu=about_menu)
 
         self.app.bind("<Control-n>",self.newProject)
