@@ -103,17 +103,17 @@ class RXviewerReport:
             contact_info = f"\n\nMoyen de contact : {contact}" if contact else ""
             body = "**Problèmes cochés :**\n" + '\n'.join(f"- {i}" for i in issues) + "\n\n**Description :**\n" + desc + sysinfo + contact_info + logs_content
 
-            # Récupérer le token depuis asset/data.json
+            # Récupérer le token depuis asset/token.json
             try:
-                data_path = Path(__file__).resolve().parent.parent / "asset" / "data.json"
+                data_path = Path(__file__).resolve().parent.parent / "asset" / "token.json"
                 with open(data_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 token = data.get("github_token", "")
             except Exception as e:
-                messagebox.showerror("Erreur", f"Impossible de lire le token GitHub dans asset/data.json : {e}")
+                messagebox.showerror("Erreur", f"Impossible de lire le token GitHub dans asset/token.json : {e}")
                 return
             if not token:
-                messagebox.showerror("Erreur", "Aucun token GitHub trouvé dans asset/data.json (clé 'github_token').")
+                messagebox.showerror("Erreur", "Aucun token GitHub trouvé dans asset/token.json (clé 'github_token').")
                 return
 
             # Envoi de l'issue via l'API GitHub

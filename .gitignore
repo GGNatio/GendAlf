@@ -1,0 +1,33 @@
+
+# Fichiers de secrets et tokens
+token.json
+
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Autres fichiers temporaires
+*.swp
+*.swo
+*.bak

@@ -2,7 +2,7 @@
   "app_info": {
     "name": "GendALF",
     "full_name": "GendALF",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "build": "20250723",
     "release_date": "2025-07-23",
     "description": "Visualiseur et analyseur d'images pour circuits électroniques",
@@ -34,6 +34,6 @@
     "Fusion de projets",
     "Support multi-langues",
     "Interface utilisateur moderne"
-  ],
-  "github_token": "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"
+  ]
+  
 }
