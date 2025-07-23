@@ -105,8 +105,8 @@ class RXviewerReport:
 
             # Récupérer le token depuis asset/token.json
             try:
-                data_path = Path(__file__).resolve().parent.parent / "asset" / "token.json"
-                with open(data_path, 'r', encoding='utf-8') as f:
+                token_path = Path(__file__).resolve().parent.parent / "asset" / "token.json"
+                with open(token_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                 token = data.get("github_token", "")
             except Exception as e:
