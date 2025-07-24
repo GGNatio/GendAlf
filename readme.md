@@ -56,11 +56,19 @@
 python main.py
 ```
 
+Autre moyen possible : 
+
+1. Téléchargez la dernière release
+2. Dézippez le fichier, et vous pouvez lancer l'exe qui sera fonctionnel !
+
+
 ### 2. Création d’un exécutable Windows
 1. Videz le contenu de `asset/recent`
 2. Exécutez `py to exe/cmd.bat`
 3. Ouvrez `py to exe/setup.iss` avec [Inno Setup Compiler](https://jrsoftware.org/isinfo.php) et lancez le script
 4. Le fichier setup sera généré sur le bureau
+
+### 2. Création d’un exécutable Windows
 
 ---
 
