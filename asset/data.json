@@ -2,7 +2,7 @@
   "app_info": {
     "name": "GendALF",
     "full_name": "GendALF",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "build": "20250724",
     "release_date": "2025-07-24",
     "description": "Visualiseur et analyseur d'images pour circuits électroniques",
