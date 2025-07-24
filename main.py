@@ -1158,33 +1158,44 @@ class RXviewer:
 
     def createProject(self, projectName: str, folder: str) -> None:
         print(f"[LOG] Création d'un nouveau projet : {projectName} dans {folder}")
-        print(f"[LOG] Projet créé et ajouté à preference.json : {self.project_file['file_name']} ({self.project_file['project_path']})")
         '''Créer un nouveau projet'''
+        # ...existing code...
+        # L'initialisation du dict se fait plus bas, inutile ici
 
         self.closeProject()
         directory = Path(folder)
-        self.project_file = {}
         if projectName and projectName != self.lang['entry_new_project_name']:
-            if not (directory / projectName).exists():
-                rep = directory / projectName
-                self.project_file['file_name'] = projectName
-            else:
+            if (directory / projectName).exists():
                 messagebox.showerror(self.lang['err'], f"{self.lang['err1']} \n'{directory / projectName}'")
                 return
-        else:  
+            rep = directory / projectName
+            (rep / 'raw').mkdir(parents=True)
+            (rep / 'edit').mkdir()
+            (rep / 'draw').mkdir()
+            (rep / 'pathtracking').mkdir()
+            self.project_file = dict(
+                file_name=projectName,
+                creation_date=datetime.now().isoformat(),
+                project_path=str(rep),
+                labels={},
+                label_id=0
+            )
+        else:
             i = 1
             while f'New_Project{i}' in [f.name for f in directory.iterdir() if f.is_dir()]:
                 i += 1
-            self.project_file['file_name'] = f'New_Project{i}'
             rep = directory / f'New_Project{i}'
-        (rep / 'raw').mkdir(parents=True)
-        (rep / 'edit').mkdir()
-        (rep / 'draw').mkdir()
-        (rep / 'pathtracking').mkdir()
-        self.project_file['creation_date'] = datetime.now().isoformat()
-        self.project_file['project_path'] = str(rep)
-        self.project_file['labels'] = {}
-        self.project_file['label_id'] = 0
+            (rep / 'raw').mkdir(parents=True)
+            (rep / 'edit').mkdir()
+            (rep / 'draw').mkdir()
+            (rep / 'pathtracking').mkdir()
+            self.project_file = dict(
+                file_name=f'New_Project{i}',
+                creation_date=datetime.now().isoformat(),
+                project_path=str(rep),
+                labels={},
+                label_id=0
+            )
 
         # Ajouter le projet à asset/preference.json (liste des projets connus)
         try:
