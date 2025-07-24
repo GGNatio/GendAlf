@@ -55,6 +55,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "{#MyAppPath}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyAppPath}\update.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyAppPath}\logs\*"; DestDir: "{app}\logs"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#MyAppPath}\asset\*"; DestDir: "{app}\asset"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

@@ -79,10 +79,15 @@ class ProjectView:
 class RXviewer:
     def __init__(self) -> None:
         self.app = tk.Tk()
+        self.app.protocol("WM_DELETE_WINDOW", self.on_close)
 
+        # Rediriger stdout/stderr vers un buffer pour capturer tout le terminal
+        import io, sys
+        self._stdout_buffer = io.StringIO()
+        sys.stdout = self._stdout_buffer
+        sys.stderr = self._stdout_buffer
 
         # Créer le dossier de logs au premier lancement si besoin (compatible PyInstaller)
-        import sys
         if hasattr(sys, '_MEIPASS'):
             base_dir = Path(sys._MEIPASS)
         else:
@@ -129,8 +134,15 @@ class RXviewer:
             self.saveProjectFile(self.current_project)
         
         PREF_PATH = Path(__file__).resolve().parent / "asset" / "preference.json"
-        with open(PREF_PATH, 'w') as file:
-            json.dump(self.option, file)
+        try:
+            with open(PREF_PATH, 'r', encoding='utf-8') as file:
+                prefs = json.load(file)
+        except Exception:
+            prefs = {}
+        prefs['bgColor'] = self.option.get('bgColor', prefs.get('bgColor', '#454545'))
+        prefs['language'] = self.option.get('language', prefs.get('language', 'francais'))
+        with open(PREF_PATH, 'w', encoding='utf-8') as file:
+            json.dump(prefs, file, indent=2, ensure_ascii=False)
     
 
     def openDoubleProjectEmbedded(self):
@@ -505,6 +517,7 @@ class RXviewer:
         about_menu.add_command(label=self.lang.get('about_info', 'Informations'), command=self.showAboutInfo)
         
 
+
         menu_bar.add_cascade(label=self.lang.get("about_menu", "À propos"), menu=about_menu)
 
         self.app.bind("<Control-n>",self.newProject)
@@ -809,6 +822,9 @@ class RXviewer:
     
     
     def openProject(self, path: Path, new: bool = False) -> None:
+        print(f"[LOG] Tentative d'ouverture du projet : {path}")
+        print(f"[LOG] Projet ouvert : {path}")
+        print(f"[LOG] Projet ajouté à preference.json : {path}")
         '''Ouvre un projet'''
 
   
@@ -818,15 +834,35 @@ class RXviewer:
                 with open(path / 'project.json', 'r', encoding='utf-8') as file:
                     self.project_file = json.load(file)
 
+            # Vérifier et ajouter le projet dans preference.json si absent
+            try:
+                pref_file = Path(__file__).resolve().parent / "asset" / "preference.json"
+                if pref_file.exists():
+                    with open(pref_file, 'r', encoding='utf-8') as f:
+                        prefs = json.load(f)
+                else:
+                    prefs = {"bgColor": "#454545", "language": "francais", "projects": []}
+                if "projects" not in prefs or not isinstance(prefs["projects"], list):
+                    prefs["projects"] = []
+                # Vérifier si le projet est déjà enregistré
+                project_path_str = str(path)
+                if not any(p.get('path') == project_path_str for p in prefs["projects"]):
+                    # Utiliser le nom du dossier comme nom de projet si pas dans project_file
+                    project_name = self.project_file.get('file_name', path.name) if hasattr(self, 'project_file') else path.name
+                    prefs["projects"].append({'name': project_name, 'path': project_path_str})
+                    with open(pref_file, 'w', encoding='utf-8') as f:
+                        json.dump(prefs, f, indent=2, ensure_ascii=False)
+            except Exception as e:
+                print(f"[DEBUG] Impossible d'ajouter le projet ouvert manuellement à asset/preference.json : {e}")
+
             self._openProjectSetup(path)
         elif path == Path('.'):
-            
             return
         else:
-
             messagebox.showerror(self.lang['err'], self.lang['err7'])
 
     def closeProject(self):
+        print(f"[LOG] Fermeture du projet : {self.current_project}")
 
         if self.current_project:
             self.saveProjectFile(self.current_project)
@@ -1062,7 +1098,7 @@ class RXviewer:
                 
                 # Parcourir tous les éléments du menu
                 menu_end = self.projet_menu.index('end')
-
+ 
                 
                 for i in range(menu_end + 1):
                     try:
@@ -1112,6 +1148,8 @@ class RXviewer:
             pass
 
     def createProject(self, projectName: str, folder: str) -> None:
+        print(f"[LOG] Création d'un nouveau projet : {projectName} dans {folder}")
+        print(f"[LOG] Projet créé et ajouté à preference.json : {self.project_file['file_name']} ({self.project_file['project_path']})")
         '''Créer un nouveau projet'''
 
         self.closeProject()
@@ -1138,12 +1176,36 @@ class RXviewer:
         self.project_file['project_path'] = str(rep)
         self.project_file['labels'] = {}
         self.project_file['label_id'] = 0
+
+        # Ajouter le projet à asset/preference.json (liste des projets connus)
+        try:
+            asset_dir = Path(__file__).resolve().parent / "asset"
+            asset_dir.mkdir(parents=True, exist_ok=True)
+            pref_file = asset_dir / "preference.json"
+            import json
+            if pref_file.exists():
+                with open(pref_file, 'r', encoding='utf-8') as f:
+                    prefs = json.load(f)
+            else:
+                prefs = {"bgColor": "#454545", "language": "francais", "projects": []}
+            # S'assurer que la clé 'projects' existe et est une liste
+            if "projects" not in prefs or not isinstance(prefs["projects"], list):
+                prefs["projects"] = []
+            # Ajouter le projet si pas déjà présent (par chemin)
+            if not any(p.get('path') == str(rep) for p in prefs["projects"]):
+                prefs["projects"].append({'name': self.project_file['file_name'], 'path': str(rep)})
+                with open(pref_file, 'w', encoding='utf-8') as f:
+                    json.dump(prefs, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"[DEBUG] Impossible d'ajouter le projet à asset/preference.json : {e}")
+
         if "_child_window" in self.__dict__:
             self._child_window.destroy()
         self.saveProjectFile(rep)
         self.openProject(rep, True)
 
     def saveProjectFile(self, path: Path):
+        print(f"[LOG] Sauvegarde du projet : {path}")
         '''Sauvegarde le fichier projet'''
 
         self.raw.saveRaws()
@@ -1240,6 +1302,7 @@ class RXviewer:
             messagebox.showinfo(title=self.lang['info'], message=self.lang.get('language_applied', 'Langue appliquée avec succès.'))
 
     def refreshLanguage(self):
+        print(f"[LOG] Changement de langue : {self.option.get('language')}")
         '''Met à jour tous les textes de l'interface avec la nouvelle langue'''
 
         
@@ -1252,31 +1315,49 @@ class RXviewer:
         # Recréer complètement la barre de menu avec la nouvelle langue
         self.app.config(menu='')  # Supprimer l'ancien menu
         self._setupMenu()  # Recréer le menu avec les nouvelles traductions
-        
+
+        # Réactiver les boutons calibrate/show vias si un projet est ouvert
+        if hasattr(self, 'current_project') and self.current_project:
+            try:
+                # Rechercher les index des boutons calibrate/show vias
+                for i in range(self.projet_menu.index('end') + 1):
+                    label = self.projet_menu.entrycget(i, 'label').lower()
+                    if ('vias' in label or 'calibrate' in label or 'étalonnage' in label or 'etalonnage' in label or 'afficher' in label or 'show' in label):
+                        self.projet_menu.entryconfig(i, state='normal')
+            except Exception:
+                pass
+
         # Mettre à jour les fenêtres enfants si elles existent
         if hasattr(self, '_child_window_toolsBox') and hasattr(self._child_window_toolsBox, 'winfo_exists') and self._child_window_toolsBox.winfo_exists():
             self._child_window_toolsBox.title(self.lang['tools_box'])
-            
+
         # Mettre à jour les fenêtres secondaires si elles existent
         if hasattr(self, '_child_window_secondary') and hasattr(self._child_window_secondary, 'winfo_exists') and self._child_window_secondary.winfo_exists():
             self._child_window_secondary.title(self.lang.get('project', 'Projet'))
-            
+
         # Mettre à jour les fenêtres de labels si elles existent
         if hasattr(self, '_child_window_labels') and hasattr(self._child_window_labels, 'winfo_exists') and self._child_window_labels.winfo_exists():
             self._child_window_labels.title(self.lang.get('labels', 'Marqueurs'))
-            
+
         # Mettre à jour les fenêtres de fusion si elles existent
         if hasattr(self, '_child_window_fusion') and hasattr(self._child_window_fusion, 'winfo_exists') and self._child_window_fusion.winfo_exists():
             self._child_window_fusion.title(self.lang.get('project_fusion', 'Fusionner deux projets'))
-            
+
         # Rafraîchir l'affichage si nécessaire
         if hasattr(self, 'raw') and self.raw.raw:
             self.displayImage()
-            
+
         # Sauvegarder les préférences
         PREF_PATH = Path(__file__).resolve().parent / "asset" / "preference.json"
-        with open(PREF_PATH, 'w') as file:
-            json.dump(self.option, file)
+        try:
+            with open(PREF_PATH, 'r', encoding='utf-8') as file:
+                prefs = json.load(file)
+        except Exception:
+            prefs = {}
+        prefs['bgColor'] = self.option.get('bgColor', prefs.get('bgColor', '#454545'))
+        prefs['language'] = self.option.get('language', prefs.get('language', 'francais'))
+        with open(PREF_PATH, 'w', encoding='utf-8') as file:
+            json.dump(prefs, file, indent=2, ensure_ascii=False)
 
     def displayImage(self) -> None:
         '''Modifie l'image et l'affiche dans le canvas'''
@@ -1451,29 +1532,31 @@ class RXviewer:
 
 
     def deleteProject(self) -> None:
-        '''Ouvre une fenêtre pour sélectionner et supprimer un projet'''
-
-        
+        '''Supprime un projet en utilisant asset/preference.json comme source de vérité.'''
+        import json
+        from tkinter import messagebox
+        from pathlib import Path
+        import tkinter as tk
+        # Charger la liste des projets connus
+        asset_dir = Path(__file__).resolve().parent / "asset"
+        projects_file = asset_dir / "preference.json"
+        if not projects_file.exists():
+            messagebox.showinfo("Info", "Aucun projet à supprimer (preference.json introuvable).")
+            return
+        try:
+            with open(projects_file, 'r', encoding='utf-8') as f:
+                prefs = json.load(f)
+            projects_list = prefs.get('projects', []) if isinstance(prefs, dict) else []
+        except Exception as e:
+            messagebox.showerror("Erreur", f"Impossible de lire asset/preference.json : {e}")
+            return
+        if not projects_list:
+            messagebox.showinfo("Info", "Aucun projet à supprimer.")
+            return
+        # Ouvre une fenêtre pour sélectionner et supprimer un projet (affiche uniquement ceux du preference.json)
         if "_child_window" in self.__dict__:
             if self._child_window is not None and tk.Toplevel.winfo_exists(self._child_window):
                 return
-
-        # Obtenir la liste des projets existants
-        projects_dir = Path.home() / "Documents/RXViwer/project"
-        available_projects = []
-        
-        if projects_dir.exists():
-            for item in projects_dir.iterdir():
-                if item.is_dir() and (item / 'project.json').exists():
-                    available_projects.append(item)
-        
-        if not available_projects:
-            messagebox.showinfo(
-                self.lang.get("info", "Information"),
-                self.lang.get("no_projects_found", "Aucun projet trouvé dans le répertoire des projets.")
-            )
-            return
-
         self._child_window = tk.Toplevel(self.app)
         self._child_window.title(self.lang.get('delete_project', 'Supprimer un projet'))
         self._child_window.transient(self.app)
@@ -1507,56 +1590,76 @@ class RXviewer:
         project_listbox = tk.Listbox(list_frame, font=("Helvetica", 10))
         scrollbar = tk.Scrollbar(list_frame, orient=tk.VERTICAL, command=project_listbox.yview)
         project_listbox.configure(yscrollcommand=scrollbar.set)
-        
         project_listbox.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
 
-        # Remplir la liste
-        for project in available_projects:
-            project_listbox.insert(tk.END, project.name)
+        # Remplir la liste avec les projets du preference.json (nom + chemin)
+        for project in projects_list:
+            name = project.get('name', '')
+            path = project.get('path', '')
+            display = f"{name:<25}  {path}"
+            project_listbox.insert(tk.END, display)
 
-        # Variable pour stocker le projet sélectionné
-        selected_project = [None]
+        selected_index = [None]
 
         def on_project_select(event):
             selection = project_listbox.curselection()
             if selection:
-                selected_project[0] = available_projects[selection[0]]
+                selected_index[0] = selection[0]
                 confirm_button.config(state='normal')
             else:
-                selected_project[0] = None
+                selected_index[0] = None
                 confirm_button.config(state='disabled')
 
         project_listbox.bind('<<ListboxSelect>>', on_project_select)
 
-        # Frame pour le champ de confirmation
         confirm_frame = tk.Frame(self._child_window)  
         confirm_frame.pack(pady=10)
-        
         tk.Label(confirm_frame, 
                 text=self.lang.get("type_project_name_to_confirm", "Tapez le nom exact du projet pour confirmer :"),
                 font=("Helvetica", 10)).pack()
-        
         entry = tk.Entry(confirm_frame, width=40, font=("Helvetica", 10))
         entry.pack(pady=5)
-
-        # Label d'erreur
         error_label = tk.Label(self._child_window, text="", fg="red", font=("Helvetica", 9))
         error_label.pack(pady=2)
-
-        # Boutons
         button_frame = tk.Frame(self._child_window)
         button_frame.pack(pady=10)
 
         def confirm_deletion():
-            if not selected_project[0]:
+            if selected_index[0] is None:
                 error_label.config(text=self.lang.get("no_project_selected", "Veuillez sélectionner un projet !"))
                 return
-                
             entered_name = entry.get().strip()
-            if entered_name == selected_project[0].name:
+            project = projects_list[selected_index[0]]
+            if entered_name == project.get('name', ''):
+                proj_path = project.get('path', '')
+                try:
+                    proj_dir = Path(proj_path)
+                    if proj_dir.exists() and proj_dir.is_dir():
+                        import shutil
+                        shutil.rmtree(proj_dir)
+                except Exception as e:
+                    messagebox.showerror("Erreur", f"Impossible de supprimer le dossier du projet : {e}", parent=self._child_window)
+                del projects_list[selected_index[0]]
+                try:
+                    with open(projects_file, 'w', encoding='utf-8') as f:
+                        json.dump(projects_list, f, indent=2, ensure_ascii=False)
+                except Exception as e:
+                    messagebox.showerror("Erreur", f"Impossible de mettre à jour asset/preference.json : {e}", parent=self._child_window)
+                    self._child_window.destroy()
+                    return
+                if hasattr(self, 'recent') and self.recent:
+                    project_path_str = str(proj_path)
+                    self.recent = [path for path in self.recent if path != project_path_str]
+                    recent_path = Path("asset/recent")
+                    recent_path.parent.mkdir(parents=True, exist_ok=True)
+                    recent_path.write_text('\n'.join(self.recent), encoding='utf-8')
                 self._child_window.destroy()
-                self._performProjectDeletion(selected_project[0])
+                success_msg = self.lang.get('project_deleted_successfully_msg', 'a été supprimé définitivement.\n\nTous les fichiers et dossiers associés ont été supprimés.')
+                messagebox.showinfo(
+                    self.lang.get("deletion_successful", "Suppression réussie"),
+                    f"{self.lang.get('project_deleted_successfully', 'Le projet')} '{entered_name}' {success_msg}"
+                )
             else:
                 error_label.config(text=self.lang.get("name_does_not_match", "Le nom saisi ne correspond pas au nom du projet sélectionné !"))
                 entry.delete(0, 'end')
@@ -1585,7 +1688,6 @@ class RXviewer:
             width=15
         ).pack(side='right', padx=5)
 
-        # Bind Enter pour confirmer
         self._child_window.bind('<Return>', lambda event: confirm_deletion())
         self._child_window.bind('<Escape>', lambda event: cancel_deletion())
 
@@ -1757,6 +1859,22 @@ class RXviewer:
             fg='#1976D2'
         ).pack()
 
+        # Ajouter un bouton pour contacter le développeur (ouvrir le repo GitHub)
+        def open_github():
+            import webbrowser
+            webbrowser.open_new('https://github.com/GGNatio/GendAlf')
+
+        contact_btn = tk.Button(
+            dev_frame,
+            text="Contact / Repo GitHub",
+            font=("Helvetica", 10, "bold"),
+            bg="#1976D2",
+            fg="white",
+            cursor="hand2",
+            command=open_github
+        )
+        contact_btn.pack(pady=(8, 0))
+
         # Informations techniques
         tech_frame = tk.Frame(main_frame, bg='white')
         tech_frame.pack(fill='x', pady=(10, 15))
@@ -1857,6 +1975,36 @@ class RXviewer:
         text['yscrollcommand'] = scrollbar.set
         scrollbar.pack(side='right', fill='y')
         doc_win.bind('<Escape>', lambda e: doc_win.destroy())
+
+    def create_log_on_exit(self):
+        """Crée un fichier de log avec le contenu du terminal lors de la fermeture."""
+        import datetime
+        now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        try:
+            base_dir = Path(__file__).resolve().parent
+            logs_dir = base_dir / "logs"
+            logs_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            logs_dir = Path.cwd() / "logs"
+            logs_dir.mkdir(parents=True, exist_ok=True)
+        log_path = logs_dir / f"session_{now}.log"
+        try:
+            if hasattr(self, '_stdout_buffer'):
+                log_content = self._stdout_buffer.getvalue()
+            else:
+                log_content = "[stdout non redirigé, impossible de capturer le terminal]"
+            with open(log_path, 'w', encoding='utf-8') as f:
+                f.write(log_content)
+        except Exception:
+            pass
+
+    def on_close(self):
+        """Handler appelé juste avant la fermeture de l'application."""
+        # ... ta gestion de projet et préférences ici ...
+        print("Fermeture de l'application. Merci d'avoir utilisé GendALF !")
+        self.create_log_on_exit()
+        
+        self.app.destroy()
         
 if __name__ == "__main__":
     # Créer et lancer l'interface RXViewer
