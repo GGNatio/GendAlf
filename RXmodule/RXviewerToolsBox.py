@@ -98,6 +98,15 @@ class RXviewerToolsBox:
         for i in self._toolsBoxTools.winfo_children():
             i.config(relief='raised')
             i.config(state='normal')
+        # Rebind label move si curseur de base ou mode label
+        if tool in ["move", "cursor", "default"]:
+            if hasattr(self.app, "rebindLabelMove"):
+                self.app.rebindLabelMove()
+        # Mode label (curseur croix) : bind déplacement labels
+        if tool == "label":
+            self.app.can.config(cursor='crosshair')
+            if hasattr(self.app, "rebindLabelMove"):
+                self.app.rebindLabelMove()
         
         # Cache la checkbox path tracking pour tous les outils sauf fuzzySelect et track
         if hasattr(self, '_intercouche_checkbox') and tool not in ['fuzzySelect', 'track']:

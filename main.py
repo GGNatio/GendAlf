@@ -391,7 +391,13 @@ class RXviewer:
     
     def onFrameConfigure(self, event: tk.Event):
         self.labels_canvas.configure(scrollregion=self.labels_canvas.bbox("all"))
-    
+    def rebindLabelMove(self):
+        """(Ré)applique les binds pour déplacer les labels sur le canvas, peu importe l'outil/curseur actif."""
+        # On suppose que self.labels est une instance de RXviewerLabels
+        # et que les méthodes _start_move_marker, _move_marker, _end_move_marker existent
+        self.can.bind("<Control-Shift-Button-1>", self.labels._start_move_marker)
+        self.can.bind("<B1-Motion>", self.labels._move_marker)
+        self.can.bind("<ButtonRelease-1>", self.labels._end_move_marker)
     def _variable(self) -> None:
        
         self.current_project = None
@@ -699,6 +705,9 @@ class RXviewer:
         self.app.bind("<Control-z>", lambda e: self.smart_undo())
         self.app.bind_all("<Control-y>", self.toolsBox.draw.redo)
         self.app.bind("<Alt-z>", lambda e: self.undo_pathtracking() if hasattr(self, 'via_path_tracking') else None)
+
+        # (Ré)appliquer les binds pour le déplacement des labels
+        self.rebindLabelMove()
         
     def moveImageWithArrow(self, dx: int, dy: int):
         '''Déplace l’image zoomée dans le canvas'''
