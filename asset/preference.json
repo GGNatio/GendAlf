@@ -2,6 +2,13 @@
   "bgColor": "#000000",
   "language": "Francais",
   "projects": [
-    
+    {
+      "name": "CACA",
+      "path": "C:\\Users\\jggui\\Documents\\RXViwer\\project\\CACA"
+    },
+    {
+      "name": "TEST",
+      "path": "C:\\Users\\jggui\\Documents\\RXViwer\\project\\TEST"
+    }
   ]
 }

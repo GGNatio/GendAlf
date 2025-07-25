@@ -845,7 +845,7 @@ class RXviewer:
 
             # Vérifier et ajouter le projet dans preference.json si absent
             try:
-                pref_file = Path(__file__).resolve().parent / "asset" / "preference.json"
+                pref_file = self.get_pref_path()
                 if pref_file.exists():
                     with open(pref_file, 'r', encoding='utf-8') as f:
                         prefs = json.load(f)
@@ -1159,68 +1159,63 @@ class RXviewer:
     def createProject(self, projectName: str, folder: str) -> None:
         print(f"[LOG] Création d'un nouveau projet : {projectName} dans {folder}")
         '''Créer un nouveau projet'''
-        # ...existing code...
-        # L'initialisation du dict se fait plus bas, inutile ici
-
+        from tkinter import messagebox
         self.closeProject()
         directory = Path(folder)
+        # Création du dossier projet
         if projectName and projectName != self.lang['entry_new_project_name']:
-            if (directory / projectName).exists():
+            rep = directory / projectName
+            if rep.exists():
                 messagebox.showerror(self.lang['err'], f"{self.lang['err1']} \n'{directory / projectName}'")
                 return
-            rep = directory / projectName
-            (rep / 'raw').mkdir(parents=True)
-            (rep / 'edit').mkdir()
-            (rep / 'draw').mkdir()
-            (rep / 'pathtracking').mkdir()
-            self.project_file = dict(
-                file_name=projectName,
-                creation_date=datetime.now().isoformat(),
-                project_path=str(rep),
-                labels={},
-                label_id=0
-            )
+            rep.mkdir(parents=True, exist_ok=True)
         else:
             i = 1
-            while f'New_Project{i}' in [f.name for f in directory.iterdir() if f.is_dir()]:
+            while (directory / f'New_Project{i}').exists():
                 i += 1
             rep = directory / f'New_Project{i}'
-            (rep / 'raw').mkdir(parents=True)
-            (rep / 'edit').mkdir()
-            (rep / 'draw').mkdir()
-            (rep / 'pathtracking').mkdir()
-            self.project_file = dict(
-                file_name=f'New_Project{i}',
-                creation_date=datetime.now().isoformat(),
-                project_path=str(rep),
-                labels={},
-                label_id=0
-            )
-
-        # Ajouter le projet à asset/preference.json (liste des projets connus)
+            rep.mkdir(parents=True, exist_ok=True)
+            projectName = f'New_Project{i}'
+        # Sous-dossiers
+        (rep / 'raw').mkdir(parents=True, exist_ok=True)
+        (rep / 'edit').mkdir(exist_ok=True)
+        (rep / 'draw').mkdir(exist_ok=True)
+        (rep / 'pathtracking').mkdir(exist_ok=True)
+        self.project_file = dict(
+            file_name=projectName,
+            creation_date=datetime.now().isoformat(),
+            project_path=str(rep),
+            labels={},
+            label_id=0
+        )
+        # Ajout dans preference.json
         try:
-            asset_dir = Path(__file__).resolve().parent / "asset"
-            asset_dir.mkdir(parents=True, exist_ok=True)
-            pref_file = asset_dir / "preference.json"
-            import json
+            pref_file = self.get_pref_path()
+            pref_file.parent.mkdir(parents=True, exist_ok=True)
             if pref_file.exists():
                 with open(pref_file, 'r', encoding='utf-8') as f:
                     prefs = json.load(f)
             else:
                 prefs = {"bgColor": "#454545", "language": "francais", "projects": []}
-            # S'assurer que la clé 'projects' existe et est une liste
             if "projects" not in prefs or not isinstance(prefs["projects"], list):
                 prefs["projects"] = []
-            # Ajouter le projet si pas déjà présent (par chemin)
+            # Ajouter le projet si pas déjà présent
             if not any(p.get('path') == str(rep) for p in prefs["projects"]):
-                prefs["projects"].append({'name': self.project_file['file_name'], 'path': str(rep)})
+                prefs["projects"].append({'name': projectName, 'path': str(rep)})
                 with open(pref_file, 'w', encoding='utf-8') as f:
                     json.dump(prefs, f, indent=2, ensure_ascii=False)
+                # Message de debug pour afficher où le fichier a été enregistré
+                from tkinter import messagebox
+                messagebox.showinfo("DEBUG", f"preference.json enregistré à :\n{pref_file}")
         except Exception as e:
             print(f"[DEBUG] Impossible d'ajouter le projet à asset/preference.json : {e}")
-
+            messagebox.showerror("Erreur", f"Impossible d'ajouter le projet à asset/preference.json :\n{e}")
+        # Nettoyage fenêtre
         if "_child_window" in self.__dict__:
-            self._child_window.destroy()
+            try:
+                self._child_window.destroy()
+            except Exception:
+                pass
         self.saveProjectFile(rep)
         self.openProject(rep, True)
 
@@ -1551,6 +1546,19 @@ class RXviewer:
             self.displayImage()
 
 
+    def get_pref_path(self):
+        '''Retourne le chemin absolu vers asset/preference.json, compatible script et EXE. Correction pour garantir la persistance.'''
+        import sys
+        from pathlib import Path
+        # On veut toujours écrire dans le dossier source, pas dans le dossier temporaire de l'exe
+        # On récupère le dossier du script principal (même en .exe)
+        if getattr(sys, 'frozen', False):
+            # Exécuté en .exe (PyInstaller)
+            base_path = Path(sys.executable).parent
+        else:
+            base_path = Path(__file__).resolve().parent
+        return base_path / 'asset' / 'preference.json'
+
     def deleteProject(self) -> None:
         '''Supprime un projet en utilisant asset/preference.json comme source de vérité.'''
         import json
@@ -1558,17 +1566,16 @@ class RXviewer:
         from pathlib import Path
         import tkinter as tk
         # Charger la liste des projets connus
-        asset_dir = Path(__file__).resolve().parent / "asset"
-        projects_file = asset_dir / "preference.json"
+        projects_file = self.get_pref_path()
         if not projects_file.exists():
-            messagebox.showinfo("Info", "Aucun projet à supprimer (preference.json introuvable).")
+            messagebox.showinfo("Info", f"Aucun projet à supprimer (preference.json introuvable).\nChemin cherché : {projects_file}")
             return
         try:
             with open(projects_file, 'r', encoding='utf-8') as f:
                 prefs = json.load(f)
             projects_list = prefs.get('projects', []) if isinstance(prefs, dict) else []
         except Exception as e:
-            messagebox.showerror("Erreur", f"Impossible de lire asset/preference.json : {e}")
+            messagebox.showerror("Erreur", f"Impossible de lire preference.json : {e}\nChemin cherché : {projects_file}")
             return
         if not projects_list:
             messagebox.showinfo("Info", "Aucun projet à supprimer.")
@@ -1660,10 +1667,19 @@ class RXviewer:
                         shutil.rmtree(proj_dir)
                 except Exception as e:
                     messagebox.showerror("Erreur", f"Impossible de supprimer le dossier du projet : {e}", parent=self._child_window)
-                del projects_list[selected_index[0]]
+                # Charger tout le dict de préférences
+                try:
+                    with open(projects_file, 'r', encoding='utf-8') as f:
+                        prefs = json.load(f)
+                except Exception as e:
+                    prefs = {"bgColor": "#454545", "language": "francais", "projects": []}
+                # Retirer le projet de la liste
+                if "projects" in prefs and isinstance(prefs["projects"], list):
+                    prefs["projects"] = [p for p in prefs["projects"] if p.get('path', '') != proj_path]
+                # Réécrire le dict complet
                 try:
                     with open(projects_file, 'w', encoding='utf-8') as f:
-                        json.dump(projects_list, f, indent=2, ensure_ascii=False)
+                        json.dump(prefs, f, indent=2, ensure_ascii=False)
                 except Exception as e:
                     messagebox.showerror("Erreur", f"Impossible de mettre à jour asset/preference.json : {e}", parent=self._child_window)
                     self._child_window.destroy()
