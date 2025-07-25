@@ -1956,7 +1956,7 @@ class RXviewer:
 
         # Bind Escape pour fermer et focus sur la fenêtre
         self._about_window.bind('<Escape>', lambda e: self._about_window.destroy())
-        self._about_window.focus_set()
+        self._about_window.focus()
 
     def smart_undo(self):
         """Fonction intelligente d'undo qui annule soit un pathtracking soit un dessin."""
@@ -2014,15 +2014,17 @@ class RXviewer:
 
     def create_log_on_exit(self):
         """Crée un fichier de log avec le contenu du terminal lors de la fermeture."""
+        import sys
+        from pathlib import Path
         import datetime
-        now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        try:
+        # Utilise le même système de résolution de chemin que get_pref_path
+        if getattr(sys, 'frozen', False):
+            base_dir = Path(sys.executable).parent
+        else:
             base_dir = Path(__file__).resolve().parent
-            logs_dir = base_dir / "logs"
-            logs_dir.mkdir(parents=True, exist_ok=True)
-        except Exception:
-            logs_dir = Path.cwd() / "logs"
-            logs_dir.mkdir(parents=True, exist_ok=True)
+        logs_dir = base_dir / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        now = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         log_path = logs_dir / f"session_{now}.log"
         try:
             if hasattr(self, '_stdout_buffer'):
