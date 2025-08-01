@@ -31,41 +31,23 @@
 
 ---
 
-## 🏁 Démarrage rapide
-
-1. Clonez le repo :
-   ```bash
-   git clone https://github.com/GGNatio/GendAlf.git
-   cd GendAlf
-
-2. Installez les dépendances :
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Lancez l’application :
-   ```bash
-   python main.py
-   ```
-
----
 
 ## 📦 Installation
 
 ### 1. Exécution directe
-```bash
-python main.py
-```
-
-Autre moyen possible : 
 
 1. Téléchargez la dernière release
 2. Dézippez le fichier, et vous pouvez lancer l'exe qui sera fonctionnel !
+
+Autre possibilité :
+1. Téléchargez le fichier de setup dans la dernière release
+2. Lancez le logiciel !
 
 
 ### 2. Création d’un exécutable Windows
 1. Videz le contenu de `asset/recent`
 2. Exécutez `py to exe/cmd.bat`
-3. Ouvrez `py to exe/setup.iss` avec [Inno Setup Compiler](https://jrsoftware.org/isinfo.php) et lancez le script
+3. Ouvrez `py to exe/setup.iss` avec Inno Setup Compiler et lancez le script
 4. Le fichier setup sera généré sur le bureau
 
 ### 2. Création d’un exécutable Windows
@@ -119,11 +101,6 @@ Les contributions sont les bienvenues !
 
 ---
 
-## 📄 Licence
-
-Ce projet est sous licence MIT.
-
----
 
 ## 👤 Auteur
 

@@ -1,5 +1,22 @@
 {
-  "bgColor": "#000000",
+  "bgColor": "#ff80c0",
   "language": "Francais",
-  "projects": []
+  "projects": [
+    {
+      "name": "Image1",
+      "path": "C:\\Users\\jggui\\Documents\\RXViwer\\project\\Image1"
+    },
+    {
+      "name": "Image2",
+      "path": "C:\\Users\\jggui\\Documents\\RXViwer\\project\\Image2"
+    },
+    {
+      "name": "New_Project1",
+      "path": "C:\\Users\\jggui\\Documents\\RXViwer\\project\\New_Project1"
+    },
+    {
+      "name": "C",
+      "path": "C:\\Users\\jggui\\Documents\\RXViwer\\project\\C"
+    }
+  ]
 }
