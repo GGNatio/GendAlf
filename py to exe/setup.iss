@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "GendALF"
-#define MyAppVersion "0.6.5"
+#define MyAppVersion "1.0.8"
 #define MyAppPublisher "ComCyber Mi"
 #define MyAppExeName "GendALF.exe"
 #define MyAppAssocName MyAppName + " File"

@@ -1096,65 +1096,35 @@ class RXviewer:
 
     def updateMenuStates(self):
         '''Met à jour l'état des éléments du menu selon l'état du projet'''
-        try:
-            if hasattr(self, 'projet_menu'):
-                
-                # États des menus selon le projet
-                project_is_open = self.current_project is not None
-                vias_menu_state = 'normal' if project_is_open else 'disabled'
-                
-
-                
-                # Parcourir tous les éléments du menu
-                menu_end = self.projet_menu.index('end')
- 
-                
-                for i in range(menu_end + 1):
-                    try:
-                        item_type = self.projet_menu.type(i)
-                        if item_type in ['command', 'checkbutton']:
-                            label = self.projet_menu.entrycget(i, 'label')
-
-                            
-                            # SEULS les menus vias doivent être activés/désactivés selon l'état du projet
-                            if ('vias' in label.lower() or 
-                                'étalonnage' in label.lower() or 
-                                'etalonnage' in label.lower() or
-                                'calibrate' in label.lower() or
-                                'afficher les vias' in label.lower() or
-                                'afficher vias' in label.lower() or
-                                'show vias' in label.lower()):
-                                
-                                old_state = self.projet_menu.entrycget(i, 'state')
-                                self.projet_menu.entryconfig(i, state=vias_menu_state)
-
-                            
-                            # Les autres menus (fusion, sync, import, etc.) restent TOUJOURS activés
-                            elif any(keyword in label.lower() for keyword in [
-                                'fusio', 'synchron', 'import'
-                            ]):
-                                # S'assurer qu'ils restent activés
-                                old_state = self.projet_menu.entrycget(i, 'state')
-                                self.projet_menu.entryconfig(i, state='normal')
-
-                            
-                            # Seuls quelques menus spécifiques sont désactivés sans projet
-                            elif any(keyword in label.lower() for keyword in [
-                                'sauvegard', 'ferm'
-                            ]):
-                                old_state = self.projet_menu.entrycget(i, 'state')
-                                project_menu_state = 'normal' if project_is_open else 'disabled'
-                                self.projet_menu.entryconfig(i, state=project_menu_state)
-
-                                
-                    except tk.TclError as e:
-
-                        continue
-                
-
-                        
-        except Exception:
-            pass
+        if hasattr(self, 'projet_menu'):
+            project_is_open = self.current_project is not None
+            vias_menu_state = 'normal' if project_is_open else 'disabled'
+            menu_end = self.projet_menu.index('end')
+            for i in range(menu_end + 1):
+                try:
+                    item_type = self.projet_menu.type(i)
+                    if item_type in ['command', 'checkbutton']:
+                        label = self.projet_menu.entrycget(i, 'label')
+                        # Activation forcée des menus vias si projet ouvert
+                        if ('vias' in label.lower() or 
+                            'étalonnage' in label.lower() or 
+                            'etalonnage' in label.lower() or
+                            'calibrate' in label.lower() or
+                            'afficher les vias' in label.lower() or
+                            'afficher vias' in label.lower() or
+                            'show vias' in label.lower()):
+                            self.projet_menu.entryconfig(i, state=vias_menu_state)
+                        elif any(keyword in label.lower() for keyword in [
+                            'fusio', 'synchron', 'import'
+                        ]):
+                            self.projet_menu.entryconfig(i, state='normal')
+                        elif any(keyword in label.lower() for keyword in [
+                            'sauvegard', 'ferm'
+                        ]):
+                            project_menu_state = 'normal' if project_is_open else 'disabled'
+                            self.projet_menu.entryconfig(i, state=project_menu_state)
+                except Exception:
+                    continue
 
     def createProject(self, projectName: str, folder: str) -> None:
         print(f"[LOG] Création d'un nouveau projet : {projectName} dans {folder}")
@@ -1287,6 +1257,7 @@ class RXviewer:
         var = tk.Variable(value=self._langs)
         listbox = tk.Listbox(self._child_window, listvariable=var, height=6, font=("Helvetica", 10))
         listbox.pack(expand=True, fill='both', side='left')
+
         scrollbar = tk.Scrollbar(self._child_window, orient=tk.VERTICAL, command=listbox.yview)
         listbox['yscrollcommand'] = scrollbar.set
         scrollbar.pack(side='left', expand=True, fill='y')
@@ -1519,6 +1490,7 @@ class RXviewer:
     def navigRaw(self, direction: int) -> None:
         '''Permets de défiler entre les images'''
         if self.raw.raw:
+
             new_id = self.raw_id + direction
             if 0 <= new_id < len(self.raw.raw):
                 self.raw_id = new_id

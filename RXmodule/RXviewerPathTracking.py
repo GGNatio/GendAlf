@@ -812,32 +812,12 @@ class RXviewerPathTracking:
             return []
 
     def hex_to_rgb(self, hex_color):
-        """Convertit une couleur hexadécimale en couleur RGB (format natif souhaité)."""
-        # Retirer le # s'il est présent
+        """Convertit une couleur hexadécimale en couleur RGB natif (R, G, B)."""
         hex_color = hex_color.lstrip('#')
-        
-        # Convertir les composantes RGB
         r = int(hex_color[0:2], 16)
         g = int(hex_color[2:4], 16)
         b = int(hex_color[4:6], 16)
-        
-        # Retourner en format RGB natif (255,0,0 = rouge)
         return (r, g, b)
-
-    def display_pathtrackings_on_current_layer(self):
-        """Affiche tous les pathtrackings de la couche courante."""
-        if not self.app.raw.raw:
-            return
-            
-        # Charger les pathtrackings de la couche courante
-        current_layer_pathtrackings = [p for p in self.pathtrackings if p['raw_id'] == self.app.raw_id]
-        
-        if current_layer_pathtrackings:
-            # Redessiner tous les pathtrackings sur le calque
-            self.redraw_all_pathtrackings_on_layer(self.app.raw_id)
-            
-            # Afficher l'image mise à jour
-            self.app.displayImage()
 
     def draw_pathtracking_on_layer(self, pathtracking_data):
         """Dessine un pathtracking sur l'image calque correspondante dans le dossier pathtracking."""
@@ -876,15 +856,13 @@ class RXviewerPathTracking:
             
             # Obtenir la couleur du pathtracking en RGB
             pathtracking_color_rgb = self.hex_to_rgb(pathtracking_data.get('color', '#FF0000'))
-            # Convertir RGB en BGR pour OpenCV
-            pathtracking_color_bgr = (pathtracking_color_rgb[2], pathtracking_color_rgb[1], pathtracking_color_rgb[0])
-            pathtracking_color_bgra = (*pathtracking_color_bgr, 255)  # Ajouter alpha=255 (opaque)
-            
+            # Utiliser RGB natif pour OpenCV
+            pathtracking_color_rgba = (*pathtracking_color_rgb, 255)  # Ajouter alpha=255 (opaque)
             # Dessiner les points de la piste
             if 'piste_points' in pathtracking_data:
                 for py, px in pathtracking_data['piste_points']:
                     if 0 <= py < pathtracking_image.shape[0] and 0 <= px < pathtracking_image.shape[1]:
-                        pathtracking_image[py, px] = pathtracking_color_bgra
+                        pathtracking_image[py, px] = pathtracking_color_rgba
             
             # Dessiner les vias et points sur l'image pathtracking
             self.draw_pathtracking_vias(pathtracking_data, pathtracking_image)
@@ -920,19 +898,12 @@ class RXviewerPathTracking:
             # Dessiner tous les pathtrackings de cette couche
             current_layer_pathtrackings = [p for p in self.pathtrackings if p['raw_id'] == raw_id]
             for p in current_layer_pathtrackings:
-                # Obtenir la couleur du pathtracking en RGB
                 pathtracking_color_rgb = self.hex_to_rgb(p.get('color', '#FF0000'))
-                # Convertir RGB en BGR pour OpenCV
-                pathtracking_color_bgr = (pathtracking_color_rgb[2], pathtracking_color_rgb[1], pathtracking_color_rgb[0])
-                pathtracking_color_bgra = (*pathtracking_color_bgr, 255)  # Ajouter alpha=255 (opaque)
-                
-                # Dessiner les points de la piste
+                pathtracking_color_rgba = (*pathtracking_color_rgb, 255)
                 if 'piste_points' in p:
                     for py, px in p['piste_points']:
                         if 0 <= py < pathtracking_image.shape[0] and 0 <= px < pathtracking_image.shape[1]:
-                            pathtracking_image[py, px] = pathtracking_color_bgra
-                
-                # Dessiner les vias et points sur l'image pathtracking
+                            pathtracking_image[py, px] = pathtracking_color_rgba
                 self.draw_pathtracking_vias(p, pathtracking_image)
             
             # Sauvegarder l'image pathtracking mise à jour

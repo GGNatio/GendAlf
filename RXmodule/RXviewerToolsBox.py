@@ -42,35 +42,47 @@ class RXviewerToolsBox:
     def toolsBox(self) -> None:
         '''Fenêtre qui sert de toolsbox avec tous les outils'''
         print('toolsBox')
-        if "_child_window_toolsBox" in self.__dict__:
-            if self._child_window_toolsBox is not None and tk.Toplevel.winfo_exists(self._child_window_toolsBox):
-                return
+        # Détruire proprement la fenêtre toolbox si elle existe
+        if hasattr(self, '_child_window_toolsBox') and self._child_window_toolsBox is not None:
+            try:
+                if tk.Toplevel.winfo_exists(self._child_window_toolsBox):
+                    self._child_window_toolsBox.destroy()
+            except Exception:
+                pass
+            self._child_window_toolsBox = None
 
+        # Réinitialiser tous les widgets et états
+        self._toolsBoxTools = None
+        self._setting_scale = None
+        self._intercouche_checkbox = None
+
+        # Créer la nouvelle fenêtre toolbox
         self._child_window_toolsBox = tk.Toplevel(self.app.app)
         self._child_window_toolsBox.title(self.app.lang['tools_box'])
         self._child_window_toolsBox.transient(self.app.app)
         self._child_window_toolsBox.geometry(f'+{self.app.app.winfo_x()}+{self.app.app.winfo_y()+55}')
 
+        # Recréer tous les widgets et boutons
+        tk.Label(self._child_window_toolsBox, text=self.app.lang['tools'] + ' :').pack(anchor='nw', padx=5, pady=(2, 0))
+        self._toolsBoxTools = tk.Frame(self._child_window_toolsBox, borderwidth=2, relief='sunken', bg='white', border=0.5)
+        self._toolsBoxTools.pack(padx=5, pady=(0, 5))
+
+        # Création des boutons et widgets comme dans la version de base
         tk.Label(self._child_window_toolsBox, text=self.app.lang['tools'] + ' :').pack(anchor='nw', padx=5, pady=(2, 0))
         self._toolsBoxTools = tk.Frame(self._child_window_toolsBox, borderwidth=2, relief='sunken', bg='white', border=0.5)
         self._toolsBoxTools.pack(padx=5, pady=(0, 5))
 
         tk.Button(self._toolsBoxTools, command=self.draw.undo, image=self.toolsIcon['undo-history'], width=25, height=25).grid(row=0, column=1, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=self.draw.redo, image=self.toolsIcon['redo-history'], width=25, height=25).grid(row=0, column=2, padx=1, pady=1)
-    
-        # Bouton pour remettre le curseur de base
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_switch('default'), text='○', font=('Arial', 6)).grid(row=0, column=0, padx=1, pady=1, sticky='nsew')
-        
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_switch('move'), image=self.toolsIcon['move'], width=25, height=25).grid(row=1, column=0, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_switch('pencil'), image=self.toolsIcon['pencil'], width=25, height=25).grid(row=1, column=1, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_switch('fuzzySelect'), image=self.toolsIcon['fuzzy-select'], width=25, height=25).grid(row=1, column=2, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_switch('text'), image=self.toolsIcon['text'], width=25, height=25).grid(row=1, column=3, padx=1, pady=1)
-        
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_switch('bucketFill'), image=self.toolsIcon['bucket-fill'], width=25, height=25).grid(row=2, column=0, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_switch('colorPicker'), image=self.toolsIcon['color-picker'], width=25, height=25).grid(row=2, column=1, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=None, image=self.toolsIcon['display-filter-contrast'], width=25, height=25).grid(row=2, column=2, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=self.toolsBox_hueSaturation, image=self.toolsIcon['hue-saturation'], width=25, height=25).grid(row=2, column=3, padx=1, pady=1)
-        
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_flip(1), image=self.toolsIcon['flip-horizontal'], width=25, height=25).grid(row=3, column=0, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=lambda: self.toolsBox_flip(0), image=self.toolsIcon['flip-vertical'], width=25, height=25).grid(row=3, column=1, padx=1, pady=1)
         tk.Button(self._toolsBoxTools, command=lambda: self.do_rotation(90), image=self.toolsIcon['rotate-right'], width=25, height=25).grid(row=3, column=3, padx=1, pady=1)
@@ -80,12 +92,30 @@ class RXviewerToolsBox:
         self._toolsBoxCan_color = tk.Canvas(self._child_window_toolsBox, background=self.draw_color, width=27, height=27, relief='solid', borderwidth=1)
         self._toolsBoxCan_color.pack()
         self._toolsBoxCan_color.bind('<Button-1>', self.choose_color)
-        
+
         tk.Label(self._child_window_toolsBox, text=self.app.lang['settings'] + ' :').pack(anchor='nw', padx=5, pady=(2, 0))
         toolsBoxSettings = tk.Frame(self._child_window_toolsBox, borderwidth=2, relief='sunken', bg='white', border=0.5)
         toolsBoxSettings.pack(padx=5, pady=(0, 5))
         self._setting_scale = tk.Scale(toolsBoxSettings, from_=1, to=10, orient='horizontal', length=200, width=10, bg='white', label=self.app.lang['thickness'] + ' :', command=self._settingScale)
         self._setting_scale.pack()
+        # Rebind tous les outils par défaut
+        self.toolsBox_switch('default')
+
+        # Couleur
+        tk.Label(self._child_window_toolsBox, text=self.app.lang['color'] + ' :').pack(anchor='nw', padx=5, pady=(2, 0))
+        self._toolsBoxCan_color = tk.Canvas(self._child_window_toolsBox, background=self.draw_color, width=27, height=27, relief='solid', borderwidth=1)
+        self._toolsBoxCan_color.pack()
+        self._toolsBoxCan_color.bind('<Button-1>', self.choose_color)
+
+        # Paramètres
+        tk.Label(self._child_window_toolsBox, text=self.app.lang['settings'] + ' :').pack(anchor='nw', padx=5, pady=(2, 0))
+        toolsBoxSettings = tk.Frame(self._child_window_toolsBox, borderwidth=2, relief='sunken', bg='white', border=0.5)
+        toolsBoxSettings.pack(padx=5, pady=(0, 5))
+        self._setting_scale = tk.Scale(toolsBoxSettings, from_=1, to=10, orient='horizontal', length=200, width=10, bg='white', label=self.app.lang['thickness'] + ' :', command=self._settingScale)
+        self._setting_scale.pack()
+
+        # Rebind tous les outils par défaut
+        self.toolsBox_switch('default')
     
     def toolsBox_switch(self, tool: str) -> None:
         '''Gère quels outils sont utilisés'''
@@ -95,9 +125,68 @@ class RXviewerToolsBox:
         self.app.can.unbind('<ButtonRelease-1>')
         self.app.can.unbind('<Button-3>')
         self.app.can.config(cursor='left_ptr')
+        # Réinitialise le relief de tous les boutons toolbox
+        # Réinitialise le relief de tous les boutons toolbox
         for i in self._toolsBoxTools.winfo_children():
             i.config(relief='raised')
             i.config(state='normal')
+
+        # Associe le bon bouton à l'outil actif
+        tool_map = {
+            'default': 2,
+            'move': 0,
+            'pencil': 1,
+            'fuzzySelect': 2,
+            'text': 3,
+            'bucketFill': 0,
+            'colorPicker': 1,
+        }
+        # Pour la grille, l'ordre est :
+        # row 1: move(0), pencil(1), fuzzySelect(2), text(3)
+        # row 2: bucketFill(0), colorPicker(1), ...
+        # On utilise l'index du bouton dans la ligne correspondante
+        # Mais pour la simplicité, on va retrouver le bouton par son commande
+        # On va griser le bouton sélectionné
+        for btn in self._toolsBoxTools.winfo_children():
+            if hasattr(btn, 'cget') and btn.cget('relief') == 'sunken':
+                btn.config(relief='raised')
+        # Trouver le bouton actif
+        if tool == 'move':
+            self._toolsBoxTools.grid_slaves(row=1, column=0)[0].config(relief='sunken')
+        elif tool == 'pencil':
+            self._toolsBoxTools.grid_slaves(row=1, column=1)[0].config(relief='sunken')
+        elif tool == 'fuzzySelect':
+            self._toolsBoxTools.grid_slaves(row=1, column=2)[0].config(relief='sunken')
+        elif tool == 'text':
+            self._toolsBoxTools.grid_slaves(row=1, column=3)[0].config(relief='sunken')
+        elif tool == 'bucketFill':
+            self._toolsBoxTools.grid_slaves(row=2, column=0)[0].config(relief='sunken')
+        elif tool == 'colorPicker':
+            self._toolsBoxTools.grid_slaves(row=2, column=1)[0].config(relief='sunken')
+        elif tool == 'default':
+            self._toolsBoxTools.grid_slaves(row=0, column=0)[0].config(relief='sunken')
+
+        # Affichage dynamique des paramètres
+        # Afficher tolérance pour fuzzySelect/track, épaisseur pour pencil
+        if tool in ['fuzzySelect', 'track']:
+            self._setting_scale.config(label=f"{self.app.lang.get('tolerance', 'Tolérance')} : ", from_=1, to=100)
+            self._setting_scale.set(self.path_tolerance)
+            # Afficher la checkbox pathtracking
+            if not hasattr(self, '_intercouche_checkbox') or self._intercouche_checkbox is None:
+                self._intercouche_checkbox = tk.Checkbutton(
+                    self._child_window_toolsBox,
+                    text=self.app.lang.get("auto_path_tracking", "Path tracking automatique"),
+                    variable=self.intercouche_var,
+                    onvalue=True,
+                    offvalue=False
+                )
+            self._intercouche_checkbox.pack(anchor='nw', padx=5, pady=(2, 0))
+        else:
+            self._setting_scale.config(label=self.app.lang['thickness'] + ' :', from_=1, to=10)
+            self._setting_scale.set(3)
+            # Cacher la checkbox pathtracking si elle existe
+            if hasattr(self, '_intercouche_checkbox') and self._intercouche_checkbox:
+                self._intercouche_checkbox.pack_forget()
         # Rebind label move si curseur de base ou mode label
         if tool in ["move", "cursor", "default"]:
             if hasattr(self.app, "rebindLabelMove"):

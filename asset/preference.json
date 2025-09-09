@@ -1,7 +1,10 @@
 {
-  "bgColor": "#ff80c0",
+  "bgColor": "#0080ff",
   "language": "Francais",
   "projects": [
-    
+    {
+      "name": "TestPapaGP",
+      "path": "C:\\Users\\jggui\\Documents\\RXViwer\\project\\TestPapaGP"
+    }
   ]
 }
