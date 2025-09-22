@@ -64,5 +64,14 @@
     "double_project": "An zwei Projekten gleichzeitig arbeiten",
     "synchro_project": "Zwei Projekte synchronisieren",
     "choose_way_of_fusion": "Wie möchten Sie die Projekte zusammenführen?",
-    "language_applied": "Sprache erfolgreich angewendet."
+    "language_applied": "Sprache erfolgreich angewendet.",
+    "nav_first": "<<",
+    "nav_prev": "<",
+    "nav_reset": "♦",
+    "nav_next": ">",
+    "nav_last": ">>",
+    "documentation": "Dokumentation",
+    "auto_update": "Automatisches Update",
+    "local_update_zip": "Lokales Update (ZIP)",
+    "report_bug": "Fehler melden"
 }

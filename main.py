@@ -477,16 +477,15 @@ class RXviewer:
         self.projet_menu.add_command(label=self.lang['import_raw_auto'], accelerator="Ctrl+I", command=self.raw.importRawAuto)
         self.projet_menu.add_command(label=self.lang['import_raw_manual'], accelerator="Ctrl+M", command=self.raw.importRawManual)
         self.projet_menu.add_separator()
-        # Ajouter le bouton d'étalonnage des vias
-        self.projet_menu.add_command(label=self.lang['calibrate_vias'], command=self.calibrateVias, state='disabled')
+    # Ajouter le bouton d'étalonnage des vias (toujours actif)
+        self.projet_menu.add_command(label=self.lang['calibrate_vias'], command=self.calibrateVias)
         self.calibrate_vias_menu_index = self.projet_menu.index('end')
-        
-        # Ajouter le bouton pour afficher/masquer les vias
+
+        # Ajouter le bouton pour afficher/masquer les vias (toujours actif)
         self.show_vias_var = tk.BooleanVar(value=False)
         self.projet_menu.add_checkbutton(label=self.lang.get('show_vias', 'Afficher les vias'), 
-                                       variable=self.show_vias_var, 
-                                       command=self.toggleShowVias, 
-                                       state='disabled')
+                        variable=self.show_vias_var, 
+                        command=self.toggleShowVias)
         self.show_vias_menu_index = self.projet_menu.index('end')
         self.projet_menu.add_separator()
         self.projet_menu.add_command(label=self.lang['quit'], command=self.app.quit)
@@ -507,21 +506,21 @@ class RXviewer:
         help_menu = tk.Menu(menu_bar, tearoff=0)
         help_menu.add_command(label=f"❔ {self.lang.get('help_title', 'Raccourcis clavier')} (F1)", command=self.showShortcutsHelp)
         help_menu.add_separator()
-        help_menu.add_command(label="Documentation", command=self.showDocumentation)
+        help_menu.add_command(label=self.lang.get('documentation', 'Documentation'), command=self.showDocumentation)
+         
 
         menu_bar.add_cascade(label=self.lang.get("help_menu", "Aide"), menu=help_menu)
 
         
         about_menu = tk.Menu(menu_bar, tearoff=0)
         about_menu.add_command(label=self.lang.get('check_updates', 'Rechercher les mises à jour'), command=self.checkForUpdates)
-        about_menu.add_command(label="Mise à jour automatique", command=self.run_update_online)
-        about_menu.add_command(label="Mise à jour locale (ZIP)", command=self.run_update_local)
+        about_menu.add_command(label=self.lang.get('auto_update', 'Mise à jour automatique'), command=self.run_update_online)
+        about_menu.add_command(label=self.lang.get('local_update_zip', 'Mise à jour locale (ZIP)'), command=self.run_update_local)
         about_menu.add_separator()
-        
-        about_menu.add_command(label="Signaler un bug", command=lambda: RXviewerReport(self.app))
+        about_menu.add_command(label=self.lang.get('report_bug', 'Signaler un bug'), command=lambda: RXviewerReport(self.app))
         about_menu.add_separator()
         about_menu.add_command(label=self.lang.get('about_info', 'Informations'), command=self.showAboutInfo)
-        
+            
 
 
         menu_bar.add_cascade(label=self.lang.get("about_menu", "À propos"), menu=about_menu)
@@ -603,8 +602,7 @@ class RXviewer:
                     if Path(path).exists():
                        
                         menu.add_command(label=path.replace(str(Path.home() / "Documents/RXViwer/project") + '\\', ''), command=lambda p=path: self.openProject(Path(p)))
-                    else:
-                       
+                      
                         self.recent.remove(path)
                 return
         self.recent = []
@@ -698,11 +696,7 @@ class RXviewer:
         self.app.bind("m", lambda e: self.toolsBox.toolsBox_switch('move'))
         self.app.bind("p", lambda e: self.toolsBox.toolsBox_switch('pencil'))
         self.app.bind("b", lambda e: self.toolsBox.toolsBox_switch('bucketFill'))
-        self.app.bind("t", lambda e: self.toolsBox.toolsBox_switch('text'))
-        self.app.bind("f", lambda e: self.toolsBox.toolsBox_switch('fuzzySelect'))
-        self.app.bind("r", lambda e: self.toolsBox.toolsBox_switch('track'))
         
-        self.app.bind("<Control-z>", lambda e: self.smart_undo())
         self.app.bind_all("<Control-y>", self.toolsBox.draw.redo)
         self.app.bind("<Alt-z>", lambda e: self.undo_pathtracking() if hasattr(self, 'via_path_tracking') else None)
 
@@ -1097,34 +1091,20 @@ class RXviewer:
     def updateMenuStates(self):
         '''Met à jour l'état des éléments du menu selon l'état du projet'''
         if hasattr(self, 'projet_menu'):
-            project_is_open = self.current_project is not None
-            vias_menu_state = 'normal' if project_is_open else 'disabled'
-            menu_end = self.projet_menu.index('end')
-            for i in range(menu_end + 1):
-                try:
-                    item_type = self.projet_menu.type(i)
-                    if item_type in ['command', 'checkbutton']:
-                        label = self.projet_menu.entrycget(i, 'label')
-                        # Activation forcée des menus vias si projet ouvert
-                        if ('vias' in label.lower() or 
-                            'étalonnage' in label.lower() or 
-                            'etalonnage' in label.lower() or
-                            'calibrate' in label.lower() or
-                            'afficher les vias' in label.lower() or
-                            'afficher vias' in label.lower() or
-                            'show vias' in label.lower()):
-                            self.projet_menu.entryconfig(i, state=vias_menu_state)
-                        elif any(keyword in label.lower() for keyword in [
-                            'fusio', 'synchron', 'import'
-                        ]):
-                            self.projet_menu.entryconfig(i, state='normal')
-                        elif any(keyword in label.lower() for keyword in [
-                            'sauvegard', 'ferm'
-                        ]):
-                            project_menu_state = 'normal' if project_is_open else 'disabled'
-                            self.projet_menu.entryconfig(i, state=project_menu_state)
-                except Exception:
-                    continue
+            # Les menus sont TOUJOURS actifs
+            try:
+                self.projet_menu.entryconfig(self.calibrate_vias_menu_index, state='normal')
+                self.projet_menu.entryconfig(self.show_vias_menu_index, state='normal')
+                # Change les callbacks selon l'état du projet
+                if self.current_project:
+                    self.projet_menu.entryconfig(self.calibrate_vias_menu_index, command=self.calibrateVias)
+                    self.projet_menu.entryconfig(self.show_vias_menu_index, command=self.toggleShowVias)
+                else:
+                    from tkinter import messagebox
+                    self.projet_menu.entryconfig(self.calibrate_vias_menu_index, command=lambda: messagebox.showinfo('Info', 'Veuillez ouvrir un projet'))
+                    self.projet_menu.entryconfig(self.show_vias_menu_index, command=lambda: messagebox.showinfo('Info', 'Veuillez ouvrir un projet'))
+            except Exception:
+                pass
 
     def createProject(self, projectName: str, folder: str) -> None:
         print(f"[LOG] Création d'un nouveau projet : {projectName} dans {folder}")

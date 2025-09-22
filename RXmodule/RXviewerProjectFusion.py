@@ -107,18 +107,20 @@ class RXviewerProjectFusion:
     def _p1_button(self, frame: tk.Frame, side: str):
         frame_b = tk.Frame(frame)
         frame_b.pack(side=side)
-        tk.Button(frame_b, text="✂ Rogner", command=lambda: self._start_crop(side)).grid(padx=1, pady=1)
+        tk.Button(frame_b, text=self.app.lang['crop_button'], command=lambda: self._start_crop(side)).grid(padx=1, pady=1)
 
     # ----------- FENÊTRE DE CROP INTERACTIVE -----------
     def _start_crop(self, side):
         raws = getattr(self, f'raws1' if side == 'left' else 'raws2', None)
         raw_id = getattr(self, f'raws1_id' if side == 'left' else 'raws2_id', 0)
         if not raws or not len(raws):
-            messagebox.showwarning("⚠️", f"Aucune image à rogner (projet {1 if side == 'left' else 2}).")
+            project_num = 1 if side == 'left' else 2
+            messagebox.showwarning("⚠️", self.app.lang['no_image_to_crop'].format(project_num=project_num))
             return
 
         crop_win = tk.Toplevel(self.app.app)
-        crop_win.title(f"✂ Rogner projet {'gauche' if side == 'left' else 'droite'}")
+        crop_side = self.app.lang.get('left', 'left') if side == 'left' else self.app.lang.get('right', 'right')
+        crop_win.title(self.app.lang['crop_window_title'].format(side=crop_side))
         crop_win.geometry("900x900")
         crop_win.transient(self.app.app)
         crop_win.grab_set()
@@ -164,7 +166,7 @@ class RXviewerProjectFusion:
         tk.Button(nav_frame, text=">>", command=lambda: self._crop_navigate(len(crop_vars["raws"])-1-crop_vars["raw_id"])).pack(side='left')
         tk.Label(nav_frame, textvariable=tk.StringVar(value=f"{crop_vars['raw_id']+1}/{len(crop_vars['raws'])}")).pack(side='left')
 
-        tk.Button(crop_win, text="Appliquer le crop à toutes les images", command=lambda: self._apply_crop_all(crop_win)).pack(pady=10)
+        tk.Button(crop_win, text=self.app.lang['apply_crop_all_button'], command=lambda: self._apply_crop_all(crop_win)).pack(pady=10)
 
     def _draw_crop_image(self):
         crop_vars = self._crop_vars
@@ -199,7 +201,7 @@ class RXviewerProjectFusion:
         self._crop_vars["box"] = (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
         self._draw_crop_image()
         # Confirmation
-        if messagebox.askyesno("Crop", "Retirer la zone rouge (extérieur) ?"):
+        if messagebox.askyesno(self.app.lang['crop_confirm_title'], self.app.lang['crop_confirm_msg']):
             self._apply_crop_remove_zone()
     def _apply_crop_remove_zone(self):
         crop_vars = self._crop_vars
@@ -227,7 +229,7 @@ class RXviewerProjectFusion:
                     img_new[y0_img:y1_img, x0_img:x1_img] = 0
             crop_vars["raws"][i] = img_new
 
-        messagebox.showinfo("✅", "Zone retirée ou masquée sur toutes les images.")
+        messagebox.showinfo("✅", self.app.lang['crop_zone_removed_msg'])
         crop_vars["canvas"].master.destroy()
     # Clic droit = déplacement
     def _crop_start_drag(self, event):
@@ -264,7 +266,7 @@ class RXviewerProjectFusion:
     def _apply_crop_all(self, crop_win):
         crop_vars = self._crop_vars
         if not crop_vars["box"]:
-            messagebox.showwarning("⚠️", "Sélectionnez une zone à rogner (clic gauche + glisser).")
+            messagebox.showwarning("⚠️", self.app.lang['select_crop_zone_warning'])
             return
         x0, y0, x1, y1 = [int(v) for v in crop_vars["box"]]
         zoom = crop_vars["zoom"]
@@ -279,7 +281,7 @@ class RXviewerProjectFusion:
             img = crop_vars["raws"][i]
             crop_vars["raws"][i] = img[y0_img:y1_img, x0_img:x1_img]
         crop_win.destroy()
-        messagebox.showinfo("✅", "Rognage appliqué à toutes les images.")
+        messagebox.showinfo("✅", self.app.lang['crop_applied_all_msg'])
 
 
 
